@@ -1,9 +1,23 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
+from api.utils.serializer.response.CoinPriceSerializerResponse import CoinPriceSerializerResponse
 from api.utils.services import get_token_price
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="token",
+            description="코인 심볼 (예: BTC, ETH, USDT)",
+            required=True,
+            type=str,
+            location=OpenApiParameter.QUERY,
+        )
+    ],
+    responses=CoinPriceSerializerResponse
+)
 @api_view(['GET'])
 def get_coin_price(request):
     token = request.query_params.get("token")
