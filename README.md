@@ -1,0 +1,5 @@
+- urls : frontend와 url 매핑하는 곳
+- views : api 받는 주소 작성하고 service와 연결시켜주는 곳
+- service : 실질적인 로직 작성하는 장소
+- repository : service에서 DB connection을 요청하면 서로 연결해주는 곳 
+- model : ORM(백엔드 코드랑 DB랑 쉽게 사용할 수 있도록 매핑해주는 거)
