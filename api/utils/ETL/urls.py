@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import get_transaction_trace
+from .views import get_transaction_data
 
 urlpatterns = [
-    path("transaction-trace/", get_transaction_trace, name="transaction-trace"),
+    path("transaction-data/", get_transaction_data, name="transaction-data"),
 ]
