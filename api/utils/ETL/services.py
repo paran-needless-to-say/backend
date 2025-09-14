@@ -6,6 +6,21 @@ import math
 
 RPC_URL = os.getenv("RPC_URL")
 
+# ERC 주요 메서드 시그니처
+TOKEN_TRANSFER_METHODS = {
+    # ERC-20
+    "0xa9059cbb": "erc20_transfer",  # transfer(address,uint256)
+    "0x23b872dd": "erc20_transferFrom",  # transferFrom(address,address,uint256)
+
+    # ERC-721
+    "0x42842e0e": "erc721_safeTransferFrom",  # safeTransferFrom(address,address,uint256)
+    "0xb88d4fde": "erc721_safeTransferFrom_data",  # safeTransferFrom(address,address,uint256,bytes)
+
+    # ERC-1155
+    "0xf242432a": "erc1155_safeTransferFrom",  # safeTransferFrom(address,address,uint256,uint256,bytes)
+    "0x2eb2c2d6": "erc1155_safeBatchTransferFrom",  # safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)
+}
+
 
 def get_transaction_trace():
     result_json = fetch_blocks_and_txs(18000000, 18000000)
@@ -51,7 +66,7 @@ def _get_data(output):
 
 
 def _get_cmd(start_block, end_block, rpc_url):
-    cmd = [
+    return [
         "ethereumetl",
         "export_blocks_and_transactions",
         "--start-block", str(start_block),
@@ -62,7 +77,6 @@ def _get_cmd(start_block, end_block, rpc_url):
         "--batch-size", "10",
         "--max-workers", "5"
     ]
-    return cmd
 
 
 def _start_script(cmd):
@@ -117,9 +131,19 @@ def _sanitize_floats(data):
 
 
 def _tag_transaction_type(result_json):
-    for tx in result_json.get("transactions", []):
-        if tx.get("value") and int(tx["value"]) > 0:
-            tx["tx_type"] = "native"
-        else:
-            tx["tx_type"] = "contract_call"
+    filtered_txs = []
 
+    for tx in result_json.get("transactions", []):
+        value = int(tx.get("value", 0)) if tx.get("value") else 0
+        input_data = str(tx.get("input", "")).lower()
+
+        if value > 0:
+            tx["tx_type"] = "native"
+            filtered_txs.append(tx)
+        elif input_data and input_data != "0x":
+            selector = input_data[:10]
+            if selector in TOKEN_TRANSFER_METHODS:
+                tx["tx_type"] = TOKEN_TRANSFER_METHODS[selector]
+                filtered_txs.append(tx)
+
+    result_json["transactions"] = filtered_txs
