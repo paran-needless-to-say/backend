@@ -2,8 +2,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
-from api.utils.serializer.response.CoinPriceSerializerResponse import CoinPriceSerializerResponse
-from api.utils.services import get_token_price
+from api.utils.token.serializer.response.CoinPriceSerializerResponse import CoinPriceSerializerResponse
+from api.utils.token.services import get_token_price
 
 
 @extend_schema(

@@ -11,5 +11,6 @@ urlpatterns = [
     # application
     path('admin/', admin.site.urls),
     path('screen/', include('api.screen.urls')),
-    path("utils/", include("api.utils.urls")),
+    path("utils/token/", include("api.utils.token.urls")),
+    path("utils/etl/", include("api.utils.etl.urls")),
 ]
