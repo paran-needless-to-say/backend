@@ -74,13 +74,13 @@ BRIDGE_METHODS = {
 
 
 def get_transaction_trace(start_block, end_block):
-    result_json = fetch_blocks_and_txs(start_block, end_block)
+    result_json = _fetch_blocks_and_txs(start_block, end_block)
     _tag_transaction_type(result_json)
     return result_json
 
 
 # ETL 활용하여 블록, 트랜잭션 데이터 추출 함수
-def fetch_blocks_and_txs(start_block, end_block):
+def _fetch_blocks_and_txs(start_block, end_block):
     result_json = {"blocks": [], "transactions": []}
 
     cmd = _get_cmd(start_block, end_block, RPC_URL)
