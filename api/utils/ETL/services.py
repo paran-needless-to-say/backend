@@ -21,9 +21,60 @@ TOKEN_TRANSFER_METHODS = {
     "0x2eb2c2d6": "erc1155_safeBatchTransferFrom",  # safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)
 }
 
+# Swap 함수 시그니처 (Uniswap, Curve 등)
+SWAP_METHODS = {
+    # Uniswap V2 (and SushiSwap, etc.)
+    "0x38ed1739": "uniswap_v2_swapExactTokensForTokens",
+    "0x18cbafe5": "uniswap_v2_swapExactETHForTokens",
+    "0x8803dbee": "uniswap_v2_swapTokensForExactTokens",
+    "0x7ff36ab5": "uniswap_v2_swapExactETHForTokens",
+    "0x4a25d94a": "uniswap_v2_swapTokensForExactETH",
+    "0xfb3bdb41": "uniswap_v2_swapETHForExactTokens",
+    "0x42712a67": "uniswap_v2_swapExactTokensForETH",
 
-def get_transaction_trace():
-    result_json = fetch_blocks_and_txs(18000000, 18000000)
+    # Uniswap V3
+    "0x414bf389": "uniswap_v3_exactInput",
+    "0x2e95b6c8": "uniswap_v3_exactOutput",
+    "0xf28c0498": "uniswap_v3_exactInputSingle",
+    "0x09b81346": "uniswap_v3_exactOutputSingle",
+
+    # Curve
+    "0x5c11d795": "curve_exchange",
+    "0x3df02124": "curve_exchangeUnderlying",
+    "0xa6417ed6": "curve_exchangeMultiple",
+
+    # Balancer
+    "0x52bbbe29": "balancer_swap",
+    "0x8a8c523c": "balancer_batchSwap",
+}
+
+# Bridge 함수 시그니처
+BRIDGE_METHODS = {
+    # Multichain
+    "0x44bc937b": "multichain_anySwapOutUnderlying",
+    "0xf7d8c883": "multichain_anySwapOut",
+    "0x79f89197": "multichain_anySwapOutNative",
+
+    # Hop
+    "0x1c411e9a": "hop_swapAndSend",
+
+    # Polygon PoS Bridge
+    "0x2e1a7d4d": "polygon_withdraw",
+
+    # Arbitrum
+    "0x8c8c7f8a": "arbitrum_outboundTransfer",
+
+    # Optimism
+    "0x94b576de": "optimism_depositERC20",
+    "0x3b4b138c": "optimism_withdraw",
+
+    # Stargate
+    "0x617ba037": "stargate_swap",
+}
+
+
+def get_transaction_trace(start_block, end_block):
+    result_json = fetch_blocks_and_txs(start_block, end_block)
     _tag_transaction_type(result_json)
     return result_json
 
@@ -33,7 +84,7 @@ def fetch_blocks_and_txs(start_block, end_block):
     result_json = {"blocks": [], "transactions": []}
 
     cmd = _get_cmd(start_block, end_block, RPC_URL)
-    result = _start_script(cmd)
+    result = _run_script(cmd)
     output = _validation_block_process(result)
 
     if output is None:
@@ -79,7 +130,7 @@ def _get_cmd(start_block, end_block, rpc_url):
     ]
 
 
-def _start_script(cmd):
+def _run_script(cmd):
     return subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 
@@ -137,13 +188,23 @@ def _tag_transaction_type(result_json):
         value = int(tx.get("value", 0)) if tx.get("value") else 0
         input_data = str(tx.get("input", "")).lower()
 
+        tx_type = None
+
         if value > 0:
-            tx["tx_type"] = "native"
-            filtered_txs.append(tx)
+            tx_type = "native"
         elif input_data and input_data != "0x":
             selector = input_data[:10]
             if selector in TOKEN_TRANSFER_METHODS:
-                tx["tx_type"] = TOKEN_TRANSFER_METHODS[selector]
-                filtered_txs.append(tx)
+                tx_type = TOKEN_TRANSFER_METHODS[selector]
+            elif selector in SWAP_METHODS:
+                print(SWAP_METHODS[selector])
+                tx_type = SWAP_METHODS[selector]
+            elif selector in BRIDGE_METHODS:
+                print(BRIDGE_METHODS[selector])
+                tx_type = BRIDGE_METHODS[selector]
+
+        if tx_type:
+            tx["tx_type"] = tx_type
+            filtered_txs.append(tx)
 
     result_json["transactions"] = filtered_txs
